@@ -7056,10 +7056,31 @@
                 } else {
                     // ── Subscribe ──
                     let topic = (input?.value || '').trim();
+
+                    // Sanitize: Strip URL if pasted (e.g. https://ntfy.sh/topic -> topic)
+                    if (topic.includes('://') || topic.includes('ntfy.sh')) {
+                        try {
+                            // If it's a full URL, take the last path part
+                            const urlObj = new URL(topic.startsWith('http') ? topic : 'https://' + topic);
+                            topic = urlObj.pathname.split('/').filter(Boolean).pop() || '';
+                        } catch (e) {
+                            topic = topic.split('/').filter(Boolean).pop() || '';
+                        }
+                    }
+                    // Remove leading/trailing slashes just in case
+                    topic = topic.replace(/^\/+|\/+$/g, '');
+
                     if (!topic) {
                         topic = 'cms-' + Math.random().toString(36).substring(2, 10);
-                        if (input) input.value = topic;
                     }
+
+                    // Strict Validation: ntfy allows [a-zA-Z0-9_-]+
+                    if (!/^[a-zA-Z0-9_-]+$/.test(topic)) {
+                        alert('Invalid topic name. Use only letters, numbers, hyphens and underscores (no spaces or slashes).');
+                        return;
+                    }
+
+                    if (input) input.value = topic;
 
                     // 1. Ask notification permission
                     const permission = await Notification.requestPermission();
