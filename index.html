@@ -185,6 +185,12 @@
             <path d="M3 5v14M8 5v14M12 5v14M17 5v14M21 5v14" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" />
         </symbol>
+        <symbol id="i-volume-2" viewBox="0 0 24 24">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
         <symbol id="i-link" viewBox="0 0 24 24">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -921,7 +927,6 @@
         }
 
         .view-toggle {
-            grid-area: toggle;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -1230,9 +1235,9 @@
                 width: calc(100% - 16px);
                 border-radius: var(--radius-lg);
                 grid-template-areas:
-                    "date refresh"
-                    "filters searchToggle";
-                grid-template-columns: 1fr auto;
+                    "date refresh toggle"
+                    "filters searchToggle searchToggle";
+                grid-template-columns: 1fr auto auto;
                 grid-template-rows: auto auto;
                 gap: 8px;
             }
@@ -2438,51 +2443,170 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* Mobile sticky bottom dock (Glassmorphism) */
-        #mobileNav {
-            position: sticky;
-            bottom: 12px;
-            z-index: 80;
+        /* Settings Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
             display: none;
-            margin: 12px;
-            width: calc(100% - 24px);
-            padding: 6px;
-            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        .settings-modal {
+            width: 100%;
+            max-width: 380px;
+            background: var(--paper);
             border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+
+        .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body {
+            padding: 8px 20px 20px;
+        }
+
+        .settings-gear-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            border-radius: 50%;
+            transition: .2s;
+        }
+
+        .settings-gear-btn:hover {
+            background: rgba(109, 40, 217, 0.1);
+            color: var(--primary);
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label strong {
+            display: block;
+            font-size: 14px;
+            color: var(--ink);
+        }
+
+        .settings-label p {
+            font-size: 11px;
+            color: var(--muted);
+            margin: 2px 0 0;
+            line-height: 1.4;
+        }
+
+        #mobileNav {
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: none;
+            padding: 8px;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.25);
-            /* Deep dark shadow */
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
         #mobileNav .seg {
-            flex: 1 1 auto;
-            height: 40px;
-            border: none;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            font-size: 14px;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            cursor: pointer;
-            color: var(--ink);
+            padding: 12px;
+            border: none;
             background: transparent;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
             transition: .2s;
         }
 
-        #mobileNav .seg:hover {
-            background: rgba(0, 0, 0, 0.05);
+        #mobileNav .seg.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
         }
 
-        #mobileNav .seg.active {
-            background: linear-gradient(135deg, var(--primary), var(--accent2));
-            color: #fff;
-            box-shadow: 0 10px 20px rgba(109, 40, 217, .22);
+        #mobileNav .seg:not(.active):hover {
+            background: rgba(109, 40, 217, 0.05);
+            color: var(--primary);
+        }
+
+        @media (max-width:768px) {
+            #mobileNav {
+                display: flex;
+            }
+
+            #ordersWrap {
+                margin-bottom: 90px !important;
+            }
         }
 
         /* ================================
@@ -4192,13 +4316,22 @@
                 </button>
             </div>
 
-            <div class="view-toggle">
-                <span></span>
-                <label class="switch">
-                    <input type="checkbox" id="viewModeSwitch" aria-label="Toggle detailed view">
-                    <span class="slider"></span>
-                </label>
-                <span>Detailed</span>
+            <div class="toggle-group"
+                style="grid-area: toggle; display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
+                <div class="view-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="viewModeSwitch" aria-label="Toggle detailed view">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="btn-text">Detailed</span>
+                </div>
+
+                <button id="settingsBtn" class="settings-gear-btn" title="Voice & Language Settings"
+                    onclick="openSettingsModal()">
+                    <svg class="ico">
+                        <use href="#i-settings" />
+                    </svg>
+                </button>
             </div>
 
             <div id="theadMirror" class="thead-mirror" aria-hidden="true">
@@ -4944,7 +5077,7 @@
         /* =========================
            CONFIG
            ========================= */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwptrKwXgv28a8HEjrEsd2qxRlHoQfgm2jYW_PR0aU5E3a7MDh4j7fFV9HkfvCFycQi/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxVyZ2oiLLWmAP_CLnZ5O9Aa-rGhV8p9MOFpTXkmae6kI2w1rb5JR5aYwqUYQeoybQmBA/exec';
         const PAGE_LIMIT = 25;
         const CACHE_TTL = 10 * 60 * 1000; // 10 min cache for static data
 
@@ -5435,7 +5568,7 @@
             if (!Array.isArray(r) || r.length < 2) return '';
             const serverIndex = Number(r[0]);
             const sheetRow = toSheetRow(serverIndex);
-            const [_, ts, name, addr, p1, p2, pref, courieredVia, trackingNumber, trackingURL, dispatchISO, orderValue, courierCharge, accountPhone, payment, txnId] = r;
+            const [_, ts, name, addr, p1, p2, pref, courieredVia, trackingNumber, trackingURL, dispatchISO, orderValue, courierCharge, accountPhone, sheetPayment, txnId] = r;
 
             const viaOpts = [
                 `<option value=""${s(courieredVia) ? '' : ' selected'}>Select Courier\u2026</option>`,
@@ -5446,7 +5579,8 @@
                 })
             ].join('');
 
-            const paymentClass = s(payment) === 'Paid' ? 'paid' : 'unpaid';
+            const payStat = s(sheetPayment).trim() || 'Unpaid';
+            const paymentClass = payStat === 'Paid' ? 'paid' : 'unpaid';
             const safeDispatch = s(dispatchISO) || '';
             const addrId = `addr-${sheetRow}`;
             const av = pickAvatar(s(name));
@@ -5455,7 +5589,7 @@
             return `
   <tr data-serverindex="${serverIndex}" data-sheetrow="${sheetRow}" data-rowid="${sheetRow}"
       data-name="${s(name)}" data-ordervalue="${s(orderValue)}"
-      data-p1="${s(p1)}" data-p2="${s(p2)}" data-account="${s(accountPhone)}" data-payment="${s(payment)}" data-dispatch="${safeDispatch}" data-ts="${s(ts)}"
+      data-p1="${s(p1)}" data-p2="${s(p2)}" data-account="${s(accountPhone)}" data-payment="${payStat}" data-dispatch="${safeDispatch}" data-ts="${s(ts)}"
       data-txnid="${s(txnId)}">
     <td>
       <div class="name-cell">
@@ -5522,13 +5656,13 @@
         <div class="amount-top" style="font-weight:600; font-size:13px;">\u20B9${fmtINR(orderValue)}</div>
         <div class="status-wrap">
           <span class="status-tag ${paymentClass} payment-tag">
-            <svg class="ico16"><use href="#i-${s(payment) === 'Paid' ? 'check-circle' : 'x-circle'}"/></svg> ${s(payment) || 'Unpaid'}
+            <svg class="ico16"><use href="#i-${payStat === 'Paid' ? 'check-circle' : 'x-circle'}"/></svg> ${payStat}
           </span>
           <select class="payment-select fancy-select" data-field="payment" disabled>
-            <option value="Paid"${s(payment) === 'Paid' ? ' selected' : ''}>Paid</option>
-            <option value="Unpaid"${s(payment) === 'Unpaid' ? ' selected' : ''}>Unpaid</option>
+            <option value="Paid"${payStat === 'Paid' ? ' selected' : ''}>Paid</option>
+            <option value="Unpaid"${payStat === 'Unpaid' ? ' selected' : ''}>Unpaid</option>
           </select>
-          ${s(payment) === 'Paid' && txnId ? `<button class="view-more detail-only" onclick="showTxnDetails(event, '${txnId}')" style="margin-top:2px; border:none; font-family:inherit; background:rgba(16, 185, 129, 0.1); color:#059669;">Details</button>` : ''}
+          ${payStat === 'Paid' && txnId ? `<button class="view-more detail-only" onclick="showTxnDetails(event, '${txnId}')" style="margin-top:2px; border:none; font-family:inherit; background:rgba(16, 185, 129, 0.1); color:#059669;">Details</button>` : ''}
         </div>
       </div>
     </td>
@@ -5582,14 +5716,15 @@
             const sheetRow = toSheetRow(serverIndex);
 
             // Destructure same as buildRow
-            const [_, ts, name, addr, p1, p2, pref, courieredVia, trackingNumber, trackingURL, dispatchISO, orderValue, courierCharge, accountPhone, payment, txnId] = r;
+            const [_, ts, name, addr, p1, p2, pref, courieredVia, trackingNumber, trackingURL, dispatchISO, orderValue, courierCharge, accountPhone, sheetPayment, txnId] = r;
 
-            const pClass = s(payment) === 'Paid' ? 'paid' : 'unpaid';
+            const payStat = s(sheetPayment).trim() || 'Unpaid';
+            const pClass = payStat === 'Paid' ? 'paid' : 'unpaid';
             const cc = Number(courierCharge) || 0;
             const av = pickAvatar(s(name));
             const dayDate = fmtDateWithDay(ts, true) || '\u2014';
             const timeStr = fmtTimeOnly(ts);
-            const icon = s(payment) === 'Paid' ? 'check-circle' : 'x-circle';
+            const icon = payStat === 'Paid' ? 'check-circle' : 'x-circle';
 
             const isShipped = !!s(trackingNumber).trim();
 
@@ -5608,7 +5743,7 @@
     </div>
       <div class="right-stack">
         <div class="amount">\u20B9${fmtINR(orderValue)}</div>
-        <div class="badge ${pClass}"><svg class="ico"><use href="#i-${icon}"/></svg> ${s(payment) || 'Unpaid'}</div>
+        <div class="badge ${pClass}"><svg class="ico"><use href="#i-${icon}"/></svg> ${payStat}</div>
       </div>
     </div>`;
         }
@@ -5982,7 +6117,8 @@
             const params = new URLSearchParams({
                 action: 'search', q, payment: paymentFilter, startDate: start, endDate: end,
                 dateField: 'timestamp',
-                offset: String(currentOffset), limit: String(PAGE_LIMIT), sortBy: 'timestamp', order: 'desc'
+                offset: String(currentOffset), limit: String(PAGE_LIMIT), sortBy: 'timestamp', order: 'desc',
+                _t: Date.now()
             });
 
             if (!append) {
@@ -6211,7 +6347,7 @@
             return { start, end, prevStart: ps, prevEnd: pe };
         }
         function fetchMetricsRange(start, end) {
-            return fetch(`${SCRIPT_URL}?action=metrics&dateField=timestamp&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`)
+            return fetch(`${SCRIPT_URL}?action=metrics&dateField=timestamp&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}&_t=${Date.now()}`)
                 .then(r => r.json())
                 .catch(() => ({}));
         }
@@ -6612,6 +6748,485 @@
                 }
                 startDeleteFlow(sheetRow);
             };
+        }
+
+        /* =========================
+           VOICE NOTIFICATIONS
+           ========================= */
+        let voiceEnabled = localStorage.getItem('voice_enabled') === 'true';
+        let voiceLang = localStorage.getItem('voice_lang') || 'en-IN';
+        let viewDetailed = localStorage.getItem('view_detailed') === 'true';
+        let lastAnnouncedTxn = localStorage.getItem('last_announced_txn') || '';
+        let voiceInterval = null;
+
+        function initVoiceNotifications() {
+            const toggle = document.getElementById('voiceToggle');
+            if (toggle) {
+                toggle.checked = voiceEnabled;
+                toggle.addEventListener('change', (e) => {
+                    voiceEnabled = e.target.checked;
+                    localStorage.setItem('voice_enabled', voiceEnabled);
+                    if (voiceEnabled) {
+                        showToast('Voice Notifications Enabled', 'volume-2');
+                        startVoicePolling();
+                        speakVoiceNotificationEnabled();
+                    } else {
+                        stopVoicePolling();
+                        showToast('Voice Notifications Disabled', 'volume-x');
+                    }
+                });
+            }
+
+            const langSelect = document.getElementById('voiceLangSelect');
+            if (langSelect) {
+                langSelect.value = voiceLang;
+                langSelect.addEventListener('change', (e) => {
+                    voiceLang = e.target.value;
+                    localStorage.setItem('voice_lang', voiceLang);
+                    if (voiceEnabled) {
+                        speakVoiceNotificationEnabled();
+                    }
+                });
+            }
+
+            if (voiceEnabled) startVoicePolling();
+
+            // Initial View Persistence
+            const topViewSwitch = document.getElementById('viewModeSwitch');
+            if (topViewSwitch) topViewSwitch.checked = viewDetailed;
+
+            document.body.classList.toggle('view-detailed', viewDetailed);
+            applyDetailColsFromSwitch();
+
+            initSettingsInModal();
+        }
+
+        /* =========================
+           SETTINGS MODAL
+           ========================= */
+        function openSettingsModal() {
+            const modal = document.getElementById('settingsModalOverlay');
+            if (!modal) return;
+
+            // Sync modal controls with current state
+            const viewSwitch = document.getElementById('viewModeSwitchModal');
+            if (viewSwitch) viewSwitch.checked = document.body.classList.contains('view-detailed');
+
+            const voiceSwitch = document.getElementById('voiceToggleModal');
+            if (voiceSwitch) voiceSwitch.checked = voiceEnabled;
+
+            const langSelect = document.getElementById('voiceLangSelectModal');
+            if (langSelect) langSelect.value = voiceLang;
+
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSettingsModal(e) {
+            if (e && e.target !== document.getElementById('settingsModalOverlay') && !e.target.closest('.modal-close')) return;
+            document.getElementById('settingsModalOverlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function initSettingsInModal() {
+            // Priority: Top Controls Switch
+            const topViewSwitch = document.getElementById('viewModeSwitch');
+            const viewSwitchModal = document.getElementById('viewModeSwitchModal');
+
+            const handleViewToggle = (e) => {
+                const on = e.target.checked;
+                document.body.classList.toggle('view-detailed', on);
+                localStorage.setItem('view_detailed', on);
+                // Keep modal switch in sync if it exists
+                if (viewSwitchModal) viewSwitchModal.checked = on;
+                if (topViewSwitch) topViewSwitch.checked = on;
+                applyDetailColsFromSwitch();
+            };
+
+            if (topViewSwitch) topViewSwitch.addEventListener('change', handleViewToggle);
+            if (viewSwitchModal) viewSwitchModal.addEventListener('change', handleViewToggle);
+
+            const voiceSwitch = document.getElementById('voiceToggleModal');
+            if (voiceSwitch) {
+                voiceSwitch.addEventListener('change', (e) => {
+                    voiceEnabled = e.target.checked;
+                    localStorage.setItem('voice_enabled', voiceEnabled);
+                    if (voiceEnabled) {
+                        showToast('Voice Notifications Enabled', 'volume-2');
+                        startVoicePolling();
+                        speakVoiceNotificationEnabled();
+                    } else {
+                        stopVoicePolling();
+                        showToast('Voice Notifications Disabled', 'volume-x');
+                    }
+                });
+            }
+
+            const langSelect = document.getElementById('voiceLangSelectModal');
+            const manualVoiceSelect = document.getElementById('manualVoiceSelect');
+
+            function populateVoices() {
+                if (!('speechSynthesis' in window)) return;
+                const voices = window.speechSynthesis.getVoices();
+                const currentLang = langSelect.value;
+                const savedVoice = localStorage.getItem(`voice_model_${currentLang}`);
+
+                manualVoiceSelect.innerHTML = '<option value="">Auto-detected (Best Match)</option>';
+
+                // Filter voices by language
+                const langCode = currentLang.split('-')[0];
+                const filtered = voices.filter(v => v.lang.startsWith(langCode));
+
+                filtered.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.name;
+                    opt.textContent = `${v.name} (${v.lang})`;
+                    if (v.name === savedVoice) opt.selected = true;
+                    manualVoiceSelect.appendChild(opt);
+                });
+            }
+
+            if (langSelect) {
+                langSelect.addEventListener('change', (e) => {
+                    voiceLang = e.target.value;
+                    localStorage.setItem('voice_lang', voiceLang);
+                    populateVoices(); // Refresh voice list for new language
+                    if (voiceEnabled) {
+                        speakVoiceNotificationEnabled();
+                    }
+                });
+            }
+
+            if (manualVoiceSelect) {
+                manualVoiceSelect.addEventListener('change', (e) => {
+                    const selected = e.target.value;
+                    localStorage.setItem(`voice_model_${voiceLang}`, selected);
+                    if (voiceEnabled) {
+                        speakVoiceNotificationEnabled();
+                    }
+                });
+            }
+
+            const pushBtn = document.getElementById('pushSubBtn');
+            if (pushBtn) updatePushBtnState();
+
+            // Print Defaults — persist & auto-check the label-option checkboxes
+            const prefPrintAddress = document.getElementById('prefPrintAddress');
+            const prefPrintCourier = document.getElementById('prefPrintCourier');
+            if (prefPrintAddress) {
+                prefPrintAddress.checked = localStorage.getItem('pref_print_address') === 'true';
+                prefPrintAddress.addEventListener('change', (e) => {
+                    localStorage.setItem('pref_print_address', e.target.checked);
+                    applyPrintDefaults();
+                });
+            }
+            if (prefPrintCourier) {
+                prefPrintCourier.checked = localStorage.getItem('pref_print_courier') === 'true';
+                prefPrintCourier.addEventListener('change', (e) => {
+                    localStorage.setItem('pref_print_courier', e.target.checked);
+                    applyPrintDefaults();
+                });
+            }
+            // Apply once on init
+            applyPrintDefaults();
+
+            // ntfy Logic
+            const ntfyInput = document.getElementById('ntfyTopicInput');
+            if (ntfyInput) {
+                const savedTopic = localStorage.getItem('ntfy_topic') || '';
+                ntfyInput.value = savedTopic;
+                updateNtfyBtnState();
+            }
+
+            // Initialize voice list
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = populateVoices;
+            }
+            populateVoices();
+
+            // Test Button
+            const testBtn = document.createElement('button');
+            testBtn.className = 'btn';
+            testBtn.style.cssText = 'width:100%; margin-top:12px; height:34px; font-size:12px; font-weight:700; gap:8px;';
+            testBtn.innerHTML = '<svg class="ico"><use href="#i-volume-2"/></svg> Test Sound';
+            testBtn.onclick = testVoice;
+
+            // Debug Button
+            const debugBtn = document.createElement('button');
+            debugBtn.className = 'btn';
+            debugBtn.style.cssText = 'width:calc(100% - 10px); margin-left:5px; margin-top:8px; height:28px; font-size:10px; font-weight:400; opacity:0.6;';
+            debugBtn.innerHTML = 'Debug: List All System Voices';
+            debugBtn.onclick = debugVoices;
+
+            const modalBody = document.querySelector('.settings-modal .modal-body');
+            if (modalBody) {
+                modalBody.appendChild(testBtn);
+                modalBody.appendChild(debugBtn);
+            }
+        }
+
+        const VAPID_PUBLIC_KEY = 'BPamZ2Gp8a4IvxWfErCvlvA_vniuIi0keAoU_L04-PbY0lkrKNZVqD1RmWyUCVzfY10SbUB2xDH3l2Pe70FYpmU';
+
+        async function updatePushBtnState() {
+            const btn = document.getElementById('pushSubBtn');
+            if (!btn) return;
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                btn.textContent = 'Not Supported';
+                btn.disabled = true;
+                return;
+            }
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                btn.textContent = subscription ? 'Enabled (Turn Off)' : 'Enable Push Alerts';
+                btn.style.background = subscription ? '#fee2e2' : '';
+                btn.style.color = subscription ? '#ef4444' : '';
+            } catch (e) {
+                btn.textContent = 'Push Error';
+            }
+        }
+
+        async function togglePushSubscription() {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                let subscription = await registration.pushManager.getSubscription();
+
+                if (subscription) {
+                    // Unsubscribe
+                    await subscription.unsubscribe();
+                    // Optional: Tell backend to remove
+                    showToast('Push Notifications Disabled', 'bell-off');
+                } else {
+                    // Subscribe
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                        alert('Notification permission denied');
+                        return;
+                    }
+
+                    const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+                    subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: convertedKey
+                    });
+
+                    // Send to backend
+                    const res = await fetch(`${SCRIPT_URL}?action=saveSubscription`, {
+                        method: 'POST',
+                        body: JSON.stringify(subscription)
+                    });
+                    showToast('Push Notifications Enabled!', 'bell');
+                }
+                updatePushBtnState();
+            } catch (e) {
+                console.error('Push Error:', e);
+                alert('Push Setup Failed: ' + e.message);
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        /* Print-label default helpers */
+        function applyPrintDefaults() {
+            const addrCb = document.getElementById('alternateFromCheckbox');
+            const courierCb = document.getElementById('includeCourierCheckbox');
+            if (addrCb) addrCb.checked = localStorage.getItem('pref_print_address') === 'true';
+            if (courierCb) courierCb.checked = localStorage.getItem('pref_print_courier') === 'true';
+        }
+
+        /* ntfy helpers */
+        let _ntfyEventSource = null;
+
+        function updateNtfyBtnState() {
+            const btn = document.getElementById('ntfySubBtn');
+            if (!btn) return;
+            const topic = localStorage.getItem('ntfy_topic');
+            if (topic) {
+                btn.textContent = 'Listening ✓ (Tap to stop)';
+                btn.style.background = '#fee2e2';
+                btn.style.color = '#ef4444';
+            } else {
+                btn.textContent = 'Enable Background Alerts';
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+        }
+
+        function toggleNtfySubscription() {
+            const input = document.getElementById('ntfyTopicInput');
+            const existing = localStorage.getItem('ntfy_topic');
+
+            if (existing) {
+                // Stop listening
+                localStorage.removeItem('ntfy_topic');
+                if (_ntfyEventSource) { _ntfyEventSource.close(); _ntfyEventSource = null; }
+                if (input) input.value = '';
+                // Tell backend to clear topic
+                fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
+                    method: 'POST',
+                    body: JSON.stringify({ topic: '' })
+                }).catch(() => { });
+                showToast('Background Alerts Stopped', 'bell-off');
+            } else {
+                // Start listening
+                let topic = (input?.value || '').trim();
+                if (!topic) {
+                    // Auto-generate topic
+                    topic = 'cms-' + Math.random().toString(36).substring(2, 10);
+                    if (input) input.value = topic;
+                }
+                localStorage.setItem('ntfy_topic', topic);
+                startNtfyListener(topic);
+                // Save topic to backend so it can send notifications
+                fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
+                    method: 'POST',
+                    body: JSON.stringify({ topic: topic })
+                }).catch(() => { });
+                showToast('Background Alerts Enabled! Topic: ' + topic, 'bell');
+            }
+            updateNtfyBtnState();
+        }
+
+        function startNtfyListener(topic) {
+            if (!topic) return;
+            if (_ntfyEventSource) _ntfyEventSource.close();
+            try {
+                _ntfyEventSource = new EventSource('https://ntfy.sh/' + topic + '/sse');
+                _ntfyEventSource.onmessage = (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        if (data.event === 'message' && Notification.permission === 'granted') {
+                            new Notification(data.title || 'Payment Alert', { body: data.message || '' });
+                        }
+                    } catch (err) { /* ignore parse errors */ }
+                };
+            } catch (err) {
+                console.warn('ntfy SSE error:', err);
+            }
+        }
+
+        // Auto-start ntfy listener on page load if topic is saved
+        (function () {
+            const topic = localStorage.getItem('ntfy_topic');
+            if (topic) startNtfyListener(topic);
+        })();
+
+        function debugVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            console.log("Available Voices:", voices);
+            let list = voices.map(v => `${v.name} (${v.lang})`).join('\n');
+            alert("Available Voices Found: " + voices.length + "\n\n" + list.substring(0, 1000) + (list.length > 1000 ? "..." : ""));
+        }
+
+        function testVoice() {
+            const name = "Test User";
+            const amt = "100";
+            let text = (voiceLang === 'ta-IN')
+                ? `வெற்றி! கட்டணம் செலுத்தப்பட்டது. ரூபாய் ${amt}, ${name} இடமிருந்து பெறப்பட்டது`
+                : `Success! Received ${amt} Rupees from ${name}`;
+            speak(text);
+            showToast('Playing Test Sound...', 'volume-2');
+        }
+
+        function speakVoiceNotificationEnabled() {
+            const text = voiceLang === 'ta-IN' ? "ஒலி அறிவிப்பு செயல்படுத்தப்பட்டது" : "Voice notification enabled";
+            speak(text);
+        }
+
+        function startVoicePolling() {
+            if (voiceInterval) clearInterval(voiceInterval);
+            // Polling every 3 seconds for faster real-time updates
+            voiceInterval = setInterval(checkNewSuccessfulPayments, 3000);
+            // Initial check
+            checkNewSuccessfulPayments();
+        }
+
+        function stopVoicePolling() {
+            if (voiceInterval) clearInterval(voiceInterval);
+            voiceInterval = null;
+        }
+
+        function speak(text) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+
+            let triggerSpeak = () => {
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.rate = 0.9;
+                msg.pitch = 1.0;
+                msg.lang = voiceLang;
+
+                const voices = window.speechSynthesis.getVoices();
+                let selectedVoice = null;
+
+                // Check for manually selected voice model
+                const manualVoiceName = localStorage.getItem(`voice_model_${voiceLang}`);
+                if (manualVoiceName) {
+                    selectedVoice = voices.find(v => v.name === manualVoiceName);
+                }
+
+                // Fallback to best match if no manual selection or selection not found
+                if (!selectedVoice) {
+                    if (voiceLang === 'ta-IN') {
+                        selectedVoice = voices.find(v => v.lang.startsWith('ta') && v.name.includes('Google')) ||
+                            voices.find(v => v.lang.startsWith('ta'));
+                    } else {
+                        selectedVoice = voices.find(v => v.lang === 'en-IN' && v.name.includes('Google')) ||
+                            voices.find(v => v.lang === 'en-IN') ||
+                            voices.find(v => v.name.includes('Google')) ||
+                            voices.find(v => v.lang.startsWith('en'));
+                    }
+                }
+
+                if (selectedVoice) msg.voice = selectedVoice;
+                window.speechSynthesis.speak(msg);
+            };
+
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    window.speechSynthesis.onvoiceschanged = null;
+                    triggerSpeak();
+                };
+            } else {
+                setTimeout(triggerSpeak, 50);
+            }
+        }
+
+        function checkNewSuccessfulPayments() {
+            if (!voiceEnabled) return;
+            fetch(`${SCRIPT_URL}?action=getLatestPayments&_t=${Date.now()}`)
+                .then(r => r.json())
+                .then(payments => {
+                    if (!Array.isArray(payments) || payments.length === 0) return;
+                    const latest = payments[0];
+                    if (latest && latest.txnid !== lastAnnouncedTxn) {
+                        lastAnnouncedTxn = latest.txnid;
+                        localStorage.setItem('last_announced_txn', lastAnnouncedTxn);
+                        const amt = latest.amount || '0';
+                        const name = latest.name || 'Customer';
+
+                        let announcement = (voiceLang === 'ta-IN')
+                            ? `வெற்றி! கட்டணம் செலுத்தப்பட்டது. ரூபாய் ${amt}, ${name} இடமிருந்து பெறப்பட்டது`
+                            : `Success! Received ${amt} Rupees from ${name}`;
+
+                        speak(announcement);
+                        showToast(`New Payment: ₹${amt} from ${name}`, 'check-circle');
+                        if (typeof refreshTableAndMetrics === 'function') {
+                            refreshTableAndMetrics();
+                        }
+                    }
+                })
+                .catch(err => console.log('Voice polling silent error'));
         }
 
         function startDeleteFlow(sheetRow) {
@@ -7599,9 +8214,7 @@
            SEARCH / FILTERS / RANGE UI
            ========================= */
         function applyDetailColsFromSwitch() {
-            const on = !!document.getElementById('viewModeSwitch')?.checked;
-            document.body.classList.toggle('view-detailed', on);
-            // Toggle 'extra-col' headers as well if needed (e.g. Timestamp, Pref Courier, Order Value)
+            const on = document.body.classList.contains('view-detailed');
             document.querySelectorAll('.extra-col').forEach(el => {
                 if (on) el.classList.add('show'); else el.classList.remove('show');
             });
@@ -8282,6 +8895,7 @@
             if (cards) cards.style.removeProperty('display');
         }
         function refreshTableAndMetrics() {
+            currentOffset = 0; // CRITICAL: Reset offset for refresh
             showMetricsSkeleton();
             renderTableSkeleton();
             if (isMobile()) mobileCardSkeleton();
@@ -8435,6 +9049,8 @@
                     e.returnValue = '';
                 }
             });
+
+            initVoiceNotifications();
         }
         document.addEventListener('DOMContentLoaded', init);
 
@@ -8448,6 +9064,12 @@
 
     <!-- SVG Icons Injected -->
     <svg style="display:none">
+        <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+        </symbol>
         <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
@@ -8534,6 +9156,100 @@
             <polyline points="12 16 14 18 19 13" />
         </symbol>
     </svg>
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModalOverlay" class="modal-overlay no-print" onclick="closeSettingsModal(event)">
+        <div class="settings-modal">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg class="ico">
+                        <use href="#i-settings" />
+                    </svg>
+                    Settings
+                </div>
+                <button class="modal-close" onclick="closeSettingsModal()"><svg class="ico">
+                        <use href="#i-x" />
+                    </svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-row" style="display:none;">
+                    <label class="switch" style="display:none;">
+                        <input type="checkbox" id="viewModeSwitchModal">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">
+                        <strong>Voice Notifications</strong>
+                        <p>Announce successful payments via voice</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="voiceToggleModal">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">
+                        <strong>Voice Language</strong>
+                        <p>Select language for announcements</p>
+                    </div>
+                    <select id="voiceLangSelectModal" class="fancy-select"
+                        style="width:110px; height:28px; padding:0 8px; font-size:12px;">
+                        <option value="en-IN">English</option>
+                        <option value="ta-IN">Tamil</option>
+                    </select>
+                </div>
+                <div id="manualVoiceRow" class="settings-row"
+                    style="display: flex; flex-direction: column; align-items: stretch; gap: 8px;">
+                    <div class="settings-label">
+                        <strong>Specific Voice Model</strong>
+                        <p>Choose a specific voice from your system</p>
+                    </div>
+                    <select id="manualVoiceSelect" class="fancy-select"
+                        style="width:100%; height:32px; padding:0 8px; font-size:11px;">
+                        <option value="">Auto-detected (Best Match)</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">
+                        <strong>Push Notifications (ntfy)</strong>
+                        <p>Background alerts when screen is off</p>
+                    </div>
+                </div>
+                <div class="settings-row"
+                    style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: -8px;">
+                    <input type="text" id="ntfyTopicInput" class="fancy-input" placeholder="Enter custom ntfy topic"
+                        style="width: 100%; height: 32px; font-size: 11px;">
+                    <button id="ntfySubBtn" class="btn" style="width: 100%; height: 32px; font-size: 11px;"
+                        onclick="toggleNtfySubscription()">
+                        Enable Background Alerts
+                    </button>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">
+                        <strong>Full From-Address</strong>
+                        <p>Auto-check the "Full From-Address" option on print labels</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="prefPrintAddress">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">
+                        <strong>Preferred Courier</strong>
+                        <p>Auto-check the "Preferred Courier" option on print labels</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="prefPrintCourier">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Settings Button removal -->
+
     <!-- RECEIPT MODAL -->
     <div id="receiptModal" onclick="if(event.target===this)closeReceipt()"
         style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
@@ -8603,10 +9319,25 @@
             if (status === 'success') {
                 document.getElementById('receiptModal').style.display = 'flex';
                 document.getElementById('rTxn').textContent = up.get('txnid') || '';
-                document.getElementById('rAmt').textContent = 'Rs. ' + (up.get('amount') || '');
+                const amt = up.get('amount') || '';
+                document.getElementById('rAmt').textContent = 'Rs. ' + amt;
                 document.getElementById('rTime').textContent = decodeURIComponent(up.get('time') || '');
 
-                // Set window title? optional
+                // Activity-Driven: Instant Voice Trigger for the Payer
+                if (localStorage.getItem('voice_enabled') === 'true') {
+                    setTimeout(() => {
+                        const name = up.get('name') || 'Customer';
+                        const amt = up.get('amount') || '0';
+                        const lang = localStorage.getItem('voice_lang') || 'en-IN';
+                        if (localStorage.getItem('last_announced_txn') !== up.get('txnid')) {
+                            localStorage.setItem('last_announced_txn', up.get('txnid'));
+                            let text = (lang === 'ta-IN')
+                                ? `வெற்றி! கட்டணம் செலுத்தப்பட்டது. ரூபாய் ${amt}, ${name} இடமிருந்து பெறப்பட்டது`
+                                : `Success! Received ${amt} Rupees from ${name}`;
+                            if (typeof speak === 'function') speak(text);
+                        }
+                    }, 500);
+                }
             } else if (status === 'failed') {
                 // Reuse modal but style for failure
                 document.getElementById('receiptModal').style.display = 'flex';
