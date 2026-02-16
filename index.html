@@ -5077,7 +5077,7 @@
         /* =========================
            CONFIG
            ========================= */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxVyZ2oiLLWmAP_CLnZ5O9Aa-rGhV8p9MOFpTXkmae6kI2w1rb5JR5aYwqUYQeoybQmBA/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgBuXuXTAnDN5C5WKX5IS2dP4glojWz1v2xGykM9resvkEXl23VCh4wrNabsAtqE3yRg/exec';
         const PAGE_LIMIT = 25;
         const CACHE_TTL = 10 * 60 * 1000; // 10 min cache for static data
 
@@ -7007,9 +7007,14 @@
             const existing = localStorage.getItem('ntfy_topic');
 
             try {
+                // Ensure SW is registered
+                if (!('serviceWorker' in navigator)) {
+                    throw new Error('Service Worker not supported');
+                }
+                const registration = await navigator.serviceWorker.ready;
+
                 if (existing) {
                     // ── Unsubscribe ──
-                    const registration = await navigator.serviceWorker.ready;
                     const subscription = await registration.pushManager.getSubscription();
                     if (subscription) {
                         // Tell ntfy.sh to remove this subscription
@@ -7022,9 +7027,9 @@
                     }
                     localStorage.removeItem('ntfy_topic');
                     // Also clear from our backend
-                    fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
+                    fetch(`${SCRIPT_URL}`, {
                         method: 'POST',
-                        body: JSON.stringify({ topic: '' })
+                        body: JSON.stringify({ action: 'saveNtfyTopic', topic: '' })
                     }).catch(() => { });
                     if (input) input.value = '';
                     showToast('Background Alerts Stopped', 'bell-off');
@@ -7044,7 +7049,6 @@
                     }
 
                     // 2. Subscribe to push using ntfy.sh's VAPID key
-                    const registration = await navigator.serviceWorker.ready;
                     const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
@@ -7064,14 +7068,15 @@
                     });
 
                     if (!ntfyRes.ok) {
-                        throw new Error('ntfy.sh registration failed: ' + ntfyRes.status);
+                        const errTxt = await ntfyRes.text();
+                        throw new Error('ntfy.sh registration failed (' + ntfyRes.status + '): ' + errTxt);
                     }
 
                     // 4. Save topic locally & to backend
                     localStorage.setItem('ntfy_topic', topic);
-                    fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
+                    fetch(`${SCRIPT_URL}`, {
                         method: 'POST',
-                        body: JSON.stringify({ topic: topic })
+                        body: JSON.stringify({ action: 'saveNtfyTopic', topic: topic })
                     }).catch(() => { });
 
                     showToast('Background Alerts Enabled! Topic: ' + topic, 'bell');
@@ -7079,6 +7084,8 @@
             } catch (e) {
                 console.error('ntfy Push Error:', e);
                 alert('Push Setup Failed: ' + e.message);
+                // If it fails, let's clear local storage to allow retry
+                localStorage.removeItem('ntfy_topic');
             }
             updateNtfyBtnState();
         }
