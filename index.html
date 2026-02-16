@@ -7057,60 +7057,53 @@
                     // ── Subscribe ──
                     let topic = (input?.value || '').trim();
 
-                    // Sanitize: Strip URL if pasted (e.g. https://ntfy.sh/topic -> topic)
+                    // Sanitize: Strip URL + remove EVERYTHING except [a-zA-Z0-9_-]
                     if (topic.includes('://') || topic.includes('ntfy.sh')) {
                         try {
-                            // If it's a full URL, take the last path part
                             const urlObj = new URL(topic.startsWith('http') ? topic : 'https://' + topic);
                             topic = urlObj.pathname.split('/').filter(Boolean).pop() || '';
                         } catch (e) {
                             topic = topic.split('/').filter(Boolean).pop() || '';
                         }
                     }
-                    // Remove leading/trailing slashes just in case
-                    topic = topic.replace(/^\/+|\/+$/g, '');
+                    // Remove all invalid characters strictly
+                    topic = topic.replace(/[^a-zA-Z0-9_-]/g, '');
 
                     if (!topic) {
                         topic = 'cms-' + Math.random().toString(36).substring(2, 10);
                     }
-
-                    // Strict Validation: ntfy allows [a-zA-Z0-9_-]+
-                    if (!/^[a-zA-Z0-9_-]+$/.test(topic)) {
-                        alert('Invalid topic name. Use only letters, numbers, hyphens and underscores (no spaces or slashes).');
-                        return;
-                    }
-
                     if (input) input.value = topic;
 
-                    // 1. Ask notification permission
                     const permission = await Notification.requestPermission();
                     if (permission !== 'granted') {
                         alert('Notification permission denied. Please allow notifications in browser settings.');
                         return;
                     }
 
-                    // 2. Subscribe to push using ntfy.sh's VAPID key
                     const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
                     });
 
-                    // 3. Register subscription with ntfy.sh for our topic
-                    const subJson = subscription.toJSON();
+                    // Robust Key Extraction
+                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
+                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+
                     const ntfyRes = await fetch('https://ntfy.sh/v1/webpush', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            endpoint: subJson.endpoint,
-                            p256dh: subJson.keys.p256dh,
-                            auth: subJson.keys.auth,
-                            topics: [topic]
+                            endpoint: subscription.endpoint,
+                            p256dh: p256dh,
+                            auth: auth,
+                            topic: topic,      // Try singular
+                            topics: [topic]    // Try plural
                         })
                     });
 
                     if (!ntfyRes.ok) {
                         const errTxt = await ntfyRes.text();
-                        throw new Error('ntfy.sh registration failed (' + ntfyRes.status + '): ' + errTxt);
+                        throw new Error('ntfy registration failed (' + ntfyRes.status + ') for topic "' + topic + '": ' + errTxt);
                     }
 
                     // 4. Save topic locally & to backend
@@ -7125,7 +7118,6 @@
             } catch (e) {
                 console.error('ntfy Push Error:', e);
                 alert('Push Setup Failed: ' + e.message);
-                // If it fails, let's clear local storage to allow retry
                 localStorage.removeItem('ntfy_topic');
             }
             updateNtfyBtnState();
