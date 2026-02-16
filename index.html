@@ -5077,7 +5077,7 @@
         /* =========================
            CONFIG
            ========================= */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgBuXuXTAnDN5C5WKX5IS2dP4glojWz1v2xGykM9resvkEXl23VCh4wrNabsAtqE3yRg/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbys8tNzUxqMvo8kSrZ5RA-t7bG09UYvnSt4qdQlcLVnPDgawgYLS465PAgj9lvTEc9saQ/exec';
         const PAGE_LIMIT = 25;
         const CACHE_TTL = 10 * 60 * 1000; // 10 min cache for static data
 
@@ -6984,6 +6984,7 @@
 
         function updateNtfyBtnState() {
             const btn = document.getElementById('ntfySubBtn');
+            const testBtn = document.getElementById('ntfyTestBtn');
             if (!btn) return;
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
                 btn.textContent = 'Not Supported';
@@ -6995,10 +6996,29 @@
                 btn.textContent = 'Active ✓ (Tap to stop)';
                 btn.style.background = '#fee2e2';
                 btn.style.color = '#ef4444';
+                if (testBtn) testBtn.style.display = 'block';
             } else {
                 btn.textContent = 'Enable Background Alerts';
                 btn.style.background = '';
                 btn.style.color = '';
+                if (testBtn) testBtn.style.display = 'none';
+            }
+        }
+
+        async function sendTestPushNotification() {
+            try {
+                const res = await fetch(`${SCRIPT_URL}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'testPushNotification' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Test Push Sent!', 'bell');
+                } else {
+                    alert('Test Push Failed: ' + data.error);
+                }
+            } catch (e) {
+                alert('Connection Error: ' + e.message);
             }
         }
 
@@ -9201,6 +9221,12 @@
                     <button id="ntfySubBtn" class="btn" style="width: 100%; height: 32px; font-size: 11px;"
                         onclick="toggleNtfySubscription()">
                         Enable Background Alerts
+                    </button>
+                    <!-- TEST PUSH BUTTON (Hidden by default, shown when active) -->
+                    <button id="ntfyTestBtn" class="btn"
+                        style="width: 100%; height: 32px; font-size: 11px; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; display: none;"
+                        onclick="sendTestPushNotification()">
+                        Test Notification
                     </button>
                 </div>
                 <div class="settings-row">
