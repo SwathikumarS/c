@@ -7070,7 +7070,7 @@
                     topic = topic.replace(/[^a-zA-Z0-9_-]/g, '');
 
                     if (!topic) {
-                        topic = 'cms-' + Math.random().toString(36).substring(2, 10);
+                        topic = 'cmsalert-' + Math.random().toString(36).substring(2, 10);
                     }
                     if (input) input.value = topic;
 
@@ -7085,20 +7085,25 @@
                         applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
                     });
 
-                    // Robust Key Extraction
+                    // Robust Key Extraction (Standard Base64)
                     const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
                     const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+
+                    const regPayload = {
+                        endpoint: subscription.endpoint,
+                        p256dh: p256dh,
+                        auth: auth,
+                        topics: [topic]
+                    };
+
+                    // DIAGNOSTIC ALERT: User can see exactly what is being sent
+                    console.log('Registering with ntfy.sh:', regPayload);
+                    alert('DEBUG: Sending registration for topic: ' + topic + '\n\nPayload:\n' + JSON.stringify(regPayload, null, 2));
 
                     const ntfyRes = await fetch('https://ntfy.sh/v1/webpush', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            endpoint: subscription.endpoint,
-                            p256dh: p256dh,
-                            auth: auth,
-                            topic: topic,      // Try singular
-                            topics: [topic]    // Try plural
-                        })
+                        body: JSON.stringify(regPayload)
                     });
 
                     if (!ntfyRes.ok) {
