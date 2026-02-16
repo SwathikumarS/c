@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cms-mobile-cache-v4';
+const CACHE_NAME = 'cms-mobile-cache-v5';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -63,18 +63,20 @@ self.addEventListener('fetch', (e) => {
 
 // Push Notification Listener (handles ntfy.sh payloads)
 self.addEventListener('push', (event) => {
-    let title = 'New Payment';
-    let body = 'You received a new payment.';
+    let title = '💰 Payment Received';
+    let body = 'New payment details incoming...';
     let url = self.location.origin;
+    let icon = './icon-192.png';
 
     try {
         if (event.data) {
             const raw = event.data.json();
-            // ntfy.sh sends: { topic_url, message: { ... } }  or direct message object
+            // ntfy.sh sends: { topic_url, message: { ... } } or direct message object
             const msg = raw.message || raw;
             title = msg.title || raw.title || title;
             body = msg.message || msg.body || raw.body || body;
-            if (raw.topic_url) url = raw.topic_url;
+            if (msg.click || raw.click) url = msg.click || raw.click;
+            if (msg.icon || raw.icon) icon = msg.icon || raw.icon;
         }
     } catch (e) {
         try { body = event.data.text(); } catch (_) { }
@@ -82,12 +84,15 @@ self.addEventListener('push', (event) => {
 
     const options = {
         body: body,
-        icon: './icon-192.png',
+        icon: icon,
         badge: './icon-192.png',
-        vibrate: [200, 100, 200],
+        vibrate: [200, 100, 200, 100, 200],
         data: { url: url },
-        tag: 'payment-alert', // Prevent duplicate notifications
-        renotify: true
+        tag: 'payment-alert', // Collapse multiple alerts
+        renotify: true,
+        actions: [
+            { action: 'open', title: 'Open App' }
+        ]
     };
 
     event.waitUntil(
@@ -98,15 +103,20 @@ self.addEventListener('push', (event) => {
 // Notification Click Handler
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    const urlToOpen = event.notification.data.url || self.location.origin;
+
     event.waitUntil(
-        clients.matchAll({ type: 'window' }).then((clientList) => {
-            for (const client of clientList) {
-                if (client.url === event.notification.data.url && 'focus' in client) {
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // Check if there is already a window open with this URL
+            for (let i = 0; i < windowClients.length; i++) {
+                const client = windowClients[i];
+                if (client.url.startsWith(urlToOpen) && 'focus' in client) {
                     return client.focus();
                 }
             }
+            // If not, open a new window
             if (clients.openWindow) {
-                return clients.openWindow(event.notification.data.url);
+                return clients.openWindow(urlToOpen);
             }
         })
     );
