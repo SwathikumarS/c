@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cms-mobile-cache-v2';
+const CACHE_NAME = 'cms-mobile-cache-v3';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -57,6 +57,49 @@ self.addEventListener('fetch', (e) => {
                 return res;
             }).catch(() => cached);
             return cached || networkFetch;
+        })
+    );
+});
+
+// Push Notification Listener
+self.addEventListener('push', (event) => {
+    let data = { title: 'New Payment', body: 'You received a new payment.' };
+    try {
+        if (event.data) {
+            data = event.data.json();
+        }
+    } catch (e) {
+        console.error('Push data error:', e);
+    }
+
+    const options = {
+        body: data.body,
+        icon: './icon-192.png',
+        badge: './icon-192.png',
+        vibrate: [100, 50, 100],
+        data: {
+            url: self.location.origin
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// Notification Click Handler
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url === event.notification.data.url && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(event.notification.data.url);
+            }
         })
     );
 });
