@@ -48,7 +48,19 @@ self.addEventListener('fetch', (e) => {
         return;
     }
 
-    // App shell (HTML, manifest, icons) → stale-while-revalidate
+    // App shell (HTML, manifest) → Network-First for immediate updates
+    if (url.pathname.endsWith('/') || url.pathname.endsWith('index.html')) {
+        e.respondWith(
+            fetch(e.request).then(res => {
+                const clone = res.clone();
+                caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+                return res;
+            }).catch(() => caches.match(e.request))
+        );
+        return;
+    }
+
+    // Icons & other static assets → stale-while-revalidate
     e.respondWith(
         caches.match(e.request).then(cached => {
             const networkFetch = fetch(e.request).then(res => {
