@@ -7070,7 +7070,7 @@
                     topic = topic.replace(/[^a-zA-Z0-9_-]/g, '');
 
                     if (!topic) {
-                        topic = 'cmsalert-' + Math.random().toString(36).substring(2, 10);
+                        topic = 'ntfy' + Math.random().toString(36).substring(2, 10);
                     }
                     if (input) input.value = topic;
 
@@ -7085,20 +7085,23 @@
                         applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
                     });
 
-                    // Robust Key Extraction (Standard Base64)
-                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
-                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+                    // Robust Key Extraction (URL-SAFE Base64)
+                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))))
+                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))))
+                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
                     const regPayload = {
                         endpoint: subscription.endpoint,
                         p256dh: p256dh,
                         auth: auth,
-                        topics: [topic]
+                        topic: topic,      // Singular (Compatibility)
+                        topics: [topic]    // Plural (Standard)
                     };
 
                     // DIAGNOSTIC ALERT: User can see exactly what is being sent
-                    console.log('Registering with ntfy.sh:', regPayload);
-                    alert('DEBUG: Sending registration for topic: ' + topic + '\n\nPayload:\n' + JSON.stringify(regPayload, null, 2));
+                    console.log('Registering with ntfy.sh (v10):', regPayload);
+                    alert('DEBUG Registration (v10):\nTopic: ' + topic + '\n\nPayload:\n' + JSON.stringify(regPayload, null, 2));
 
                     const ntfyRes = await fetch('https://ntfy.sh/v1/webpush', {
                         method: 'PUT',
@@ -9266,6 +9269,13 @@
                         <input type="checkbox" id="prefPrintCourier">
                         <span class="slider"></span>
                     </label>
+                </div>
+                <div class="settings-row"
+                    style="justify-content: center; margin-top: 20px; opacity: 0.5; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                    <span
+                        style="font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px;">
+                        PWA Build: v10
+                    </span>
                 </div>
             </div>
         </div>
