@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cms-mobile-cache-v8';
+const CACHE_NAME = 'cms-mobile-cache-v9';
 const STATIC_ASSETS = [
     './',
     './index.html',
