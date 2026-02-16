@@ -6965,64 +6965,11 @@
             }
         }
 
-        const VAPID_PUBLIC_KEY = 'BPamZ2Gp8a4IvxWfErCvlvA_vniuIi0keAoU_L04-PbY0lkrKNZVqD1RmWyUCVzfY10SbUB2xDH3l2Pe70FYpmU';
-
-        async function updatePushBtnState() {
-            const btn = document.getElementById('pushSubBtn');
-            if (!btn) return;
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                btn.textContent = 'Not Supported';
-                btn.disabled = true;
-                return;
-            }
-            try {
-                const registration = await navigator.serviceWorker.ready;
-                const subscription = await registration.pushManager.getSubscription();
-                btn.textContent = subscription ? 'Enabled (Turn Off)' : 'Enable Push Alerts';
-                btn.style.background = subscription ? '#fee2e2' : '';
-                btn.style.color = subscription ? '#ef4444' : '';
-            } catch (e) {
-                btn.textContent = 'Push Error';
-            }
-        }
-
-        async function togglePushSubscription() {
-            try {
-                const registration = await navigator.serviceWorker.ready;
-                let subscription = await registration.pushManager.getSubscription();
-
-                if (subscription) {
-                    // Unsubscribe
-                    await subscription.unsubscribe();
-                    // Optional: Tell backend to remove
-                    showToast('Push Notifications Disabled', 'bell-off');
-                } else {
-                    // Subscribe
-                    const permission = await Notification.requestPermission();
-                    if (permission !== 'granted') {
-                        alert('Notification permission denied');
-                        return;
-                    }
-
-                    const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-                    subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: convertedKey
-                    });
-
-                    // Send to backend
-                    const res = await fetch(`${SCRIPT_URL}?action=saveSubscription`, {
-                        method: 'POST',
-                        body: JSON.stringify(subscription)
-                    });
-                    showToast('Push Notifications Enabled!', 'bell');
-                }
-                updatePushBtnState();
-            } catch (e) {
-                console.error('Push Error:', e);
-                alert('Push Setup Failed: ' + e.message);
-            }
-        }
+        /* =========================
+           ntfy.sh Web Push (works in background!)
+           ========================= */
+        // ntfy.sh's VAPID public key (from https://ntfy.sh/v1/config)
+        const NTFY_VAPID_KEY = 'BEMjM0sNxh41x0a6Lz3YaqkJ7AUhZefxsOQgw-at69i0fM1CybVBcj7-QQXf4N_tPCgFnOXdRbQ5jrSrr9Yg9Lc';
 
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -7035,23 +6982,17 @@
             return outputArray;
         }
 
-        /* Print-label default helpers */
-        function applyPrintDefaults() {
-            const addrCb = document.getElementById('alternateFromCheckbox');
-            const courierCb = document.getElementById('includeCourierCheckbox');
-            if (addrCb) addrCb.checked = localStorage.getItem('pref_print_address') === 'true';
-            if (courierCb) courierCb.checked = localStorage.getItem('pref_print_courier') === 'true';
-        }
-
-        /* ntfy helpers */
-        let _ntfyEventSource = null;
-
         function updateNtfyBtnState() {
             const btn = document.getElementById('ntfySubBtn');
             if (!btn) return;
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                btn.textContent = 'Not Supported';
+                btn.disabled = true;
+                return;
+            }
             const topic = localStorage.getItem('ntfy_topic');
             if (topic) {
-                btn.textContent = 'Listening ✓ (Tap to stop)';
+                btn.textContent = 'Active ✓ (Tap to stop)';
                 btn.style.background = '#fee2e2';
                 btn.style.color = '#ef4444';
             } else {
@@ -7061,64 +7002,95 @@
             }
         }
 
-        function toggleNtfySubscription() {
+        async function toggleNtfySubscription() {
             const input = document.getElementById('ntfyTopicInput');
             const existing = localStorage.getItem('ntfy_topic');
 
-            if (existing) {
-                // Stop listening
-                localStorage.removeItem('ntfy_topic');
-                if (_ntfyEventSource) { _ntfyEventSource.close(); _ntfyEventSource = null; }
-                if (input) input.value = '';
-                // Tell backend to clear topic
-                fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
-                    method: 'POST',
-                    body: JSON.stringify({ topic: '' })
-                }).catch(() => { });
-                showToast('Background Alerts Stopped', 'bell-off');
-            } else {
-                // Start listening
-                let topic = (input?.value || '').trim();
-                if (!topic) {
-                    // Auto-generate topic
-                    topic = 'cms-' + Math.random().toString(36).substring(2, 10);
-                    if (input) input.value = topic;
+            try {
+                if (existing) {
+                    // ── Unsubscribe ──
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.getSubscription();
+                    if (subscription) {
+                        // Tell ntfy.sh to remove this subscription
+                        await fetch('https://ntfy.sh/v1/webpush', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ endpoint: subscription.endpoint })
+                        }).catch(() => { });
+                        await subscription.unsubscribe();
+                    }
+                    localStorage.removeItem('ntfy_topic');
+                    // Also clear from our backend
+                    fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
+                        method: 'POST',
+                        body: JSON.stringify({ topic: '' })
+                    }).catch(() => { });
+                    if (input) input.value = '';
+                    showToast('Background Alerts Stopped', 'bell-off');
+                } else {
+                    // ── Subscribe ──
+                    let topic = (input?.value || '').trim();
+                    if (!topic) {
+                        topic = 'cms-' + Math.random().toString(36).substring(2, 10);
+                        if (input) input.value = topic;
+                    }
+
+                    // 1. Ask notification permission
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                        alert('Notification permission denied. Please allow notifications in browser settings.');
+                        return;
+                    }
+
+                    // 2. Subscribe to push using ntfy.sh's VAPID key
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
+                    });
+
+                    // 3. Register subscription with ntfy.sh for our topic
+                    const subJson = subscription.toJSON();
+                    const ntfyRes = await fetch('https://ntfy.sh/v1/webpush', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            endpoint: subJson.endpoint,
+                            p256dh: subJson.keys.p256dh,
+                            auth: subJson.keys.auth,
+                            topics: [topic]
+                        })
+                    });
+
+                    if (!ntfyRes.ok) {
+                        throw new Error('ntfy.sh registration failed: ' + ntfyRes.status);
+                    }
+
+                    // 4. Save topic locally & to backend
+                    localStorage.setItem('ntfy_topic', topic);
+                    fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
+                        method: 'POST',
+                        body: JSON.stringify({ topic: topic })
+                    }).catch(() => { });
+
+                    showToast('Background Alerts Enabled! Topic: ' + topic, 'bell');
                 }
-                localStorage.setItem('ntfy_topic', topic);
-                startNtfyListener(topic);
-                // Save topic to backend so it can send notifications
-                fetch(`${SCRIPT_URL}?action=saveNtfyTopic`, {
-                    method: 'POST',
-                    body: JSON.stringify({ topic: topic })
-                }).catch(() => { });
-                showToast('Background Alerts Enabled! Topic: ' + topic, 'bell');
+            } catch (e) {
+                console.error('ntfy Push Error:', e);
+                alert('Push Setup Failed: ' + e.message);
             }
             updateNtfyBtnState();
         }
 
-        function startNtfyListener(topic) {
-            if (!topic) return;
-            if (_ntfyEventSource) _ntfyEventSource.close();
-            try {
-                _ntfyEventSource = new EventSource('https://ntfy.sh/' + topic + '/sse');
-                _ntfyEventSource.onmessage = (e) => {
-                    try {
-                        const data = JSON.parse(e.data);
-                        if (data.event === 'message' && Notification.permission === 'granted') {
-                            new Notification(data.title || 'Payment Alert', { body: data.message || '' });
-                        }
-                    } catch (err) { /* ignore parse errors */ }
-                };
-            } catch (err) {
-                console.warn('ntfy SSE error:', err);
-            }
-        }
 
-        // Auto-start ntfy listener on page load if topic is saved
-        (function () {
-            const topic = localStorage.getItem('ntfy_topic');
-            if (topic) startNtfyListener(topic);
-        })();
+        /* Print-label default helpers */
+        function applyPrintDefaults() {
+            const addrCb = document.getElementById('alternateFromCheckbox');
+            const courierCb = document.getElementById('includeCourierCheckbox');
+            if (addrCb) addrCb.checked = localStorage.getItem('pref_print_address') === 'true';
+            if (courierCb) courierCb.checked = localStorage.getItem('pref_print_courier') === 'true';
+        }
 
         function debugVoices() {
             const voices = window.speechSynthesis.getVoices();
