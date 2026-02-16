@@ -7076,77 +7076,82 @@
                     if (input) input.value = '';
                     showToast('Background Alerts Stopped', 'bell-off');
                 } else {
+                    // ── Mandatory Reset (Build v12) ──
+                    // We ALWAYS try to unsubscribe first to ensure a fresh state
+                    try {
+                        const existingSub = await registration.pushManager.getSubscription();
+                        if (existingSub) {
+                            await fetch('https://ntfy.sh/v1/webpush', {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ endpoint: existingSub.endpoint })
+                            }).catch(() => { });
+                            await existingSub.unsubscribe();
+                            console.log('Build v12: Previous subscription cleared.');
+                        }
+                    } catch (e) { console.warn('Reset failed (ignoring):', e); }
+
                     // ── Subscribe ──
                     let topic = (input?.value || '').trim();
 
-                    // Sanitize: Strip URL + remove EVERYTHING except [a-zA-Z0-9_-]
-                    if (topic.includes('://') || topic.includes('ntfy.sh')) {
-                        try {
-                            const urlObj = new URL(topic.startsWith('http') ? topic : 'https://' + topic);
-                            topic = urlObj.pathname.split('/').filter(Boolean).pop() || '';
-                        } catch (e) {
-                            topic = topic.split('/').filter(Boolean).pop() || '';
-                        }
-                    }
-                    // Strict clean: ONLY alphanumeric for v11
-                    topic = topic.replace(/[^a-zA-Z0-9]/g, '');
-
                     if (!topic) {
-                        topic = 'ntfy' + Math.random().toString(36).substring(2, 10).replace(/[^a-z0-9]/g, '');
+                        topic = 'alert' + Math.random().toString(36).substring(2, 12).replace(/[^a-z0-9]/g, '');
                     }
+                    // Strict clean: ONLY alphanumeric for v12
+                    topic = topic.replace(/[^a-zA-Z0-9]/g, '');
                     if (input) input.value = topic;
 
                     const permission = await Notification.requestPermission();
                     if (permission !== 'granted') {
-                        alert('Notification permission denied. Please allow notifications in browser settings.');
+                        alert('Notification permission denied.');
                         return;
                     }
 
-                    const registration = await navigator.serviceWorker.ready;
-                    const subscription = await registration.pushManager.subscribe({
+                    const sub = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
                     });
 
-                    // Standard Keys for v11
-                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
-                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+                    // Standard Keys for v12
+                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh'))));
+                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))));
 
-                    // --- SMART RETRY LOGIC ---
+                    // --- SMART RETRY LOGIC (V12 DEEP DIAGNOSTICS) ---
                     const patterns = [
-                        { topics: [topic], endpoint: subscription.endpoint, p256dh, auth }, // Standard
-                        { topic: topic, topics: [topic], endpoint: subscription.endpoint, p256dh, auth }, // Redundant
-                        { topic: topic, endpoint: subscription.endpoint, p256dh, auth } // Singular only
+                        { topics: [topic], endpoint: sub.endpoint, p256dh, auth }, // Standard
+                        { topic: topic, topics: [topic], endpoint: sub.endpoint, p256dh, auth }, // Redundant
+                        { topic: topic, endpoint: sub.endpoint, p256dh, auth } // Singular only
                     ];
 
                     let success = false;
-                    let lastErr = '';
+                    let lastErrRaw = '';
 
-                    alert('DEBUG Registration (v11):\nTopic: ' + topic + '\n\nWill try 3 patterns...');
+                    alert('DEBUG Build v12:\nTopic: ' + topic + '\n\nStarting Resilient Reset & 3-pattern test...');
 
-                    for (let i = 0; i < patterns.length; i++) {
-                        console.log(`Trying ntfy pattern ${i + 1}...`, patterns[i]);
-                        const res = await fetch('https://ntfy.sh/v1/webpush', {
+                    for (let n = 0; n < patterns.length; n++) {
+                        console.log(`v12: Trying pattern ${n + 1}...`, patterns[n]);
+                        const r = await fetch('https://ntfy.sh/v1/webpush', {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(patterns[i])
+                            body: JSON.stringify(patterns[n])
                         });
 
-                        if (res.ok) {
+                        if (r.ok) {
                             success = true;
                             break;
                         } else {
-                            lastErr = await res.text();
-                            console.warn(`Pattern ${i + 1} failed:`, lastErr);
+                            lastErrRaw = await r.text();
+                            console.warn(`Pattern ${n + 1} failed with RAW text:`, lastErrRaw);
+                            // If it's a 40010, let's see exactly what ntfy says
+                            if (r.status === 400 || r.status === 401) {
+                                alert(`PATTERN ${n + 1} REJECTED!\nServer says: ${lastErrRaw}`);
+                            }
                         }
                     }
 
                     if (!success) {
-                        throw new Error('All registration patterns failed. Last error: ' + lastErr);
+                        throw new Error('All patterns failed. Server RAW response: ' + lastErrRaw);
                     }
-
-
-
 
                     // 4. Save topic locally & to backend
                     localStorage.setItem('ntfy_topic', topic);
@@ -9220,8 +9225,8 @@
                     </svg>
                     Settings
                     <span
-                        style="background: #22c55e; color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Build
-                        v11 [OK]</span>
+                        style="background: #22c55e; color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(34,197,94,0.3);">Build
+                        v12 [ACTIVE]</span>
                 </div>
                 <button class="modal-close" onclick="closeSettingsModal()"><svg class="ico">
                         <use href="#i-x" />
@@ -9311,7 +9316,7 @@
                     style="justify-content: center; margin-top: 20px; opacity: 0.5; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
                     <span
                         style="font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px;">
-                        PWA Build: v11
+                        PWA Build: v12
                     </span>
                 </div>
                 <!-- FORCE UPDATE BUTTON -->
