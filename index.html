@@ -7005,6 +7005,28 @@
             }
         }
 
+        async function forceAppUpdate() {
+            if (!confirm('This will clear the app cache and reload the latest version. Continue?')) return;
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                // Clear all caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+                localStorage.removeItem('ntfy_topic'); // Clear topic to force re-sub
+                window.location.reload(true);
+            } catch (e) {
+                alert('Update failed: ' + e.message);
+                window.location.reload(true);
+            }
+        }
+
         async function sendTestPushNotification() {
             try {
                 const res = await fetch(`${SCRIPT_URL}`, {
@@ -7066,11 +7088,11 @@
                             topic = topic.split('/').filter(Boolean).pop() || '';
                         }
                     }
-                    // Remove all invalid characters strictly
-                    topic = topic.replace(/[^a-zA-Z0-9_-]/g, '');
+                    // Strict clean: ONLY alphanumeric for v11
+                    topic = topic.replace(/[^a-zA-Z0-9]/g, '');
 
                     if (!topic) {
-                        topic = 'ntfy' + Math.random().toString(36).substring(2, 10);
+                        topic = 'ntfy' + Math.random().toString(36).substring(2, 10).replace(/[^a-z0-9]/g, '');
                     }
                     if (input) input.value = topic;
 
@@ -7080,39 +7102,51 @@
                         return;
                     }
 
+                    const registration = await navigator.serviceWorker.ready;
                     const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(NTFY_VAPID_KEY)
                     });
 
-                    // Robust Key Extraction (URL-SAFE Base64)
-                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))))
-                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))))
-                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                    // Standard Keys for v11
+                    const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
+                    const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
 
-                    const regPayload = {
-                        endpoint: subscription.endpoint,
-                        p256dh: p256dh,
-                        auth: auth,
-                        topic: topic,      // Singular (Compatibility)
-                        topics: [topic]    // Plural (Standard)
-                    };
+                    // --- SMART RETRY LOGIC ---
+                    const patterns = [
+                        { topics: [topic], endpoint: subscription.endpoint, p256dh, auth }, // Standard
+                        { topic: topic, topics: [topic], endpoint: subscription.endpoint, p256dh, auth }, // Redundant
+                        { topic: topic, endpoint: subscription.endpoint, p256dh, auth } // Singular only
+                    ];
 
-                    // DIAGNOSTIC ALERT: User can see exactly what is being sent
-                    console.log('Registering with ntfy.sh (v10):', regPayload);
-                    alert('DEBUG Registration (v10):\nTopic: ' + topic + '\n\nPayload:\n' + JSON.stringify(regPayload, null, 2));
+                    let success = false;
+                    let lastErr = '';
 
-                    const ntfyRes = await fetch('https://ntfy.sh/v1/webpush', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(regPayload)
-                    });
+                    alert('DEBUG Registration (v11):\nTopic: ' + topic + '\n\nWill try 3 patterns...');
 
-                    if (!ntfyRes.ok) {
-                        const errTxt = await ntfyRes.text();
-                        throw new Error('ntfy registration failed (' + ntfyRes.status + ') for topic "' + topic + '": ' + errTxt);
+                    for (let i = 0; i < patterns.length; i++) {
+                        console.log(`Trying ntfy pattern ${i + 1}...`, patterns[i]);
+                        const res = await fetch('https://ntfy.sh/v1/webpush', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(patterns[i])
+                        });
+
+                        if (res.ok) {
+                            success = true;
+                            break;
+                        } else {
+                            lastErr = await res.text();
+                            console.warn(`Pattern ${i + 1} failed:`, lastErr);
+                        }
                     }
+
+                    if (!success) {
+                        throw new Error('All registration patterns failed. Last error: ' + lastErr);
+                    }
+
+
+
 
                     // 4. Save topic locally & to backend
                     localStorage.setItem('ntfy_topic', topic);
@@ -9274,9 +9308,14 @@
                     style="justify-content: center; margin-top: 20px; opacity: 0.5; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
                     <span
                         style="font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px;">
-                        PWA Build: v10
+                        PWA Build: v11
                     </span>
                 </div>
+                <!-- FORCE UPDATE BUTTON -->
+                <button class="btn" onclick="forceAppUpdate()"
+                    style="width: 100%; height: 32px; font-size: 11px; margin-top: 10px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; font-weight: 700;">
+                    Force Clear Cache & Update App
+                </button>
             </div>
         </div>
     </div>
