@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cms-mobile-cache-v7';
+const CACHE_NAME = 'cms-mobile-cache-v8';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -71,14 +71,19 @@ self.addEventListener('push', (event) => {
     try {
         if (event.data) {
             const raw = event.data.json();
+            console.log('Push Received (JSON):', raw);
             // ntfy.sh sends: { topic_url, message: { ... } } or direct message object
             const msg = raw.message || raw;
             title = msg.title || raw.title || title;
             body = msg.message || msg.body || raw.body || body;
             if (msg.click || raw.click) url = msg.click || raw.click;
             if (msg.icon || raw.icon) icon = msg.icon || raw.icon;
+        } else {
+            console.warn('Push Received: No Data');
+            body = 'Tap to see what\'s new!';
         }
     } catch (e) {
+        console.error('Push Parse Error:', e);
         try { body = event.data.text(); } catch (_) { }
     }
 
