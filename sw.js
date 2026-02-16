@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cms-mobile-cache-v3';
+const CACHE_NAME = 'cms-mobile-cache-v4';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -61,29 +61,37 @@ self.addEventListener('fetch', (e) => {
     );
 });
 
-// Push Notification Listener
+// Push Notification Listener (handles ntfy.sh payloads)
 self.addEventListener('push', (event) => {
-    let data = { title: 'New Payment', body: 'You received a new payment.' };
+    let title = 'New Payment';
+    let body = 'You received a new payment.';
+    let url = self.location.origin;
+
     try {
         if (event.data) {
-            data = event.data.json();
+            const raw = event.data.json();
+            // ntfy.sh sends: { topic_url, message: { ... } }  or direct message object
+            const msg = raw.message || raw;
+            title = msg.title || raw.title || title;
+            body = msg.message || msg.body || raw.body || body;
+            if (raw.topic_url) url = raw.topic_url;
         }
     } catch (e) {
-        console.error('Push data error:', e);
+        try { body = event.data.text(); } catch (_) { }
     }
 
     const options = {
-        body: data.body,
+        body: body,
         icon: './icon-192.png',
         badge: './icon-192.png',
-        vibrate: [100, 50, 100],
-        data: {
-            url: self.location.origin
-        }
+        vibrate: [200, 100, 200],
+        data: { url: url },
+        tag: 'payment-alert', // Prevent duplicate notifications
+        renotify: true
     };
 
     event.waitUntil(
-        self.registration.showNotification(data.title, options)
+        self.registration.showNotification(title, options)
     );
 });
 
